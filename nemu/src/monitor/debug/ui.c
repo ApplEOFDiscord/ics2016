@@ -27,6 +27,8 @@ char* rl_gets() {
 	return line_read;
 }
 
+static int cmd_help(char *args);
+
 static int cmd_c(char *args) {
 	cpu_exec(-1);
 	return 0;
@@ -36,7 +38,13 @@ static int cmd_q(char *args) {
 	return -1;
 }
 
-static int cmd_help(char *args);
+static int cmd_si(char *args);
+
+static int cmd_info(char *args);
+
+static int cmd_x(char *args);
+
+static int cmd_p(char *args);
 
 static struct {
 	char *name;
@@ -46,7 +54,10 @@ static struct {
 	{ "help", "Display informations about all supported commands", cmd_help },
 	{ "c", "Continue the execution of the program", cmd_c },
 	{ "q", "Exit NEMU", cmd_q },
-
+	{ "si", "Execute the instructions step by step", cmd_si },
+	{ "info", "Print the information of registers", cmd_info },
+	{ "x", "Scan the memory from a given address", cmd_x },
+	{ "p", "Evaluate the expression", cmd_p },
 	/* TODO: Add more commands */
 
 };
@@ -73,6 +84,64 @@ static int cmd_help(char *args) {
 		}
 		printf("Unknown command '%s'\n", arg);
 	}
+	return 0;
+}
+
+static int cmd_si(char *args) {
+	char *arg = strtok(NULL, " ");
+
+	if (arg == NULL) {
+		cpu_exec(1);
+	}
+	else {
+		int n = atoi(arg);
+		cpu_exec(n);
+	}
+	return 0;
+}
+
+static int cmd_info(char *args) {
+	char *arg = strtok(NULL, " ");
+
+	if (strcmp(arg, "r") == 0) {
+		int i;
+		for(i = R_EAX; i <= R_EDI; i ++) {
+			printf("  %s:  0x%8x\n", regsl[i], cpu.gpr[i]._32);
+		}
+		printf("  eip:  0x%8x\n", cpu.eip);
+	}
+	return 0;
+}
+
+static int cmd_x(char *args) {
+	uint32_t n, addr;
+	bool success = true;
+
+	char *arg = strtok(NULL, " ");
+	n = atoi(arg);
+
+	args = arg + strlen(arg) + 1;
+	addr = expr(args, &success);
+	if(!success) {
+		assert(0);
+	}
+
+	int i;
+	for(i = 0; i < n; i ++) {
+		printf("  0x%x:  0x%08x\n", addr, swaddr_read(addr, 4));
+		addr += 4;
+	}
+	return 0;
+}
+
+static int cmd_p(char *args) {
+	bool success = true;
+	uint32_t val = expr(args, &success);
+	if(!success) {
+		assert(0);
+	}
+
+	printf("  %s = %d\n", args, val);
 	return 0;
 }
 

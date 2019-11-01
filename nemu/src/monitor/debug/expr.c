@@ -8,7 +8,7 @@
 #include <regex.h>
 
 enum {
-	HEX = 256, DEC, ADD, SUB, MUL, DIV, LPAR, RPAR, NOTYPE, EQ, UNK
+	HEX = 256, DEC, REG, ADD, SUB, MUL, DIV, LPAR, RPAR, NOTYPE, EQ, UNK
 
 	/* TODO: Add more token types */
 
@@ -22,8 +22,9 @@ static struct rule {
 	/* TODO: Add more rules.
 	 * Pay attention to the precedence level of different rules.
 	 */
-	{"0x[0-9a-f]+", HEX},			// hexadecimal numbers
-	{"[0-9]+", DEC},				// decimal numbers
+	{"0x[0-9a-f]+", HEX},							// hexadecimal numbers
+	{"[0-9]+", DEC},								// decimal numbers
+	{"\\$e(ax|bx|cx|dx|si|di|sp|bp|ip)", REG}, 		// register names
 
 	{"\\+", ADD},					// plus
 	{"-", SUB},						// minus
@@ -100,6 +101,12 @@ static bool make_token(char *e) {
 						strncpy(tokens[nr_token].str, substr_start, substr_len); 
 						tokens[nr_token].str[substr_len] = '\0';
 						nr_token ++; 
+						break;
+					case REG:
+						tokens[nr_token].type = REG;
+						strncpy(tokens[nr_token].str, substr_start, substr_len);
+						tokens[nr_token].str[substr_len] = '\0';
+						nr_token++;
 						break;
 					case ADD: tokens[nr_token].type = ADD; nr_token ++; break;
 					case SUB: tokens[nr_token].type = SUB; nr_token ++; break;
@@ -196,6 +203,18 @@ static uint32_t eval(int start, int end) {
 			return num;
 		}
 		
+		if(tokens[start].type == REG) {
+			int i;
+			for(i = R_EAX; i <= R_EDI; i ++) {
+				if(strcmp(regsl[i], tokens[start].str + 1) == 0) {
+					return reg_l(i);
+				}
+			}
+
+			if(strcmp("eip", tokens[start].str + 1) == 0) {
+				return cpu.eip;
+			}
+		}
 		assert(0);
 	}
 	else if(check_par(start, end) == true) {

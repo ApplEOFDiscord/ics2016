@@ -46,6 +46,10 @@ static int cmd_x(char *args);
 
 static int cmd_p(char *args);
 
+static int cmd_w(char *args);
+
+static int cmd_d(char *args);
+
 static struct {
 	char *name;
 	char *description;
@@ -58,6 +62,8 @@ static struct {
 	{ "info", "Print the information of registers", cmd_info },
 	{ "x", "Scan the memory from a given address", cmd_x },
 	{ "p", "Evaluate the expression", cmd_p },
+	{ "w", "Set a watchpoint", cmd_w },
+	{ "d", "Delete a watchpoint", cmd_d },
 	/* TODO: Add more commands */
 
 };
@@ -142,6 +148,19 @@ static int cmd_p(char *args) {
 	}
 
 	printf("  %s = %d\n", args, val);
+	return 0;
+}
+
+static int cmd_w(char *args) {
+	new_wp(args);
+	return 0;
+}
+
+static int cmd_d(char *args) {
+	char *arg = strtok(NULL, " ");
+	int n = atoi(arg);
+	free_wp(n);
+	printf("  breakpoint[%d] deleted\n", n);
 	return 0;
 }
 

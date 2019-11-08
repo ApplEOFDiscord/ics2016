@@ -32,7 +32,9 @@ make_helper(concat(decode_si_, SUFFIX)) {
 	 *
 	op_src->simm = ???
 	 */
-	panic("please implement me");
+	op_src->simm = instr_fetch(eip, DATA_BYTE);
+	op_src->simm <<= (32 - 8 * DATA_BYTE);
+	op_src->simm >>= (32 - 8 * DATA_BYTE);
 
 	op_src->val = op_src->simm;
 
@@ -60,7 +62,6 @@ static int concat3(decode_r_, SUFFIX, _internal) (swaddr_t eip, Operand *op) {
 	op->type = OP_TYPE_REG;
 	op->reg = ops_decoded.opcode & 0x7;
 	op->val = REG(op->reg);
-
 #ifdef DEBUG
 	snprintf(op->str, OP_STR_SIZE, "%%%s", REG_NAME(op->reg));
 #endif
